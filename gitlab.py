@@ -13,7 +13,7 @@ gitlab_router = routing.Router()
 
 @gitlab_router.register("Merge Request Hook", action="open")
 async def issue_opened(event, gl, *args, **kwargs):
-    url = f"/projects/{event.project_id}/merge_requests/{event.object_attributes['iid']}/notes"
+    url = f"/projects/{event.project_id}/merge_requests/{event.object_attributes['iid']}"
 
     integration = kwargs['integration']
     preference = db_session.query(Settings).filter(Settings.integration_id == integration.id).first()
@@ -26,13 +26,14 @@ async def issue_opened(event, gl, *args, **kwargs):
 
     match = re.search(issue_expression, mr_title)
     if match is None:
-        content = preference.mr_failed_content #.decode('utf-8')
+        content = preference.mr_failed_content  # .decode('utf-8')
         message = prepare_mr_failed_content(content, issue_expression)
+        await gl.put(url, data={"state_event": "close", "title": 'CLOSEED - {}'.format(mr_title)})
     else:
-        content = preference.mr_accepted_content #.decode('utf-8')
+        content = preference.mr_accepted_content  # .decode('utf-8')
         message = prepare_mr_success_content(content, match)
 
-    await gl.post(url, data={"body": message})
+    await gl.post('{}/notes'.format(url), data={"body": message})
 
 
 ######## Utils
