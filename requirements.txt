@@ -2,3 +2,4 @@ aiohttp
 gidgetlab
 SQLAlchemy
 pymysql
+psycopg2

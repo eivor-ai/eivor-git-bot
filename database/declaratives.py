@@ -25,10 +25,10 @@ class Settings(Base):
     mr_matcher = Column(String(250))
 
     # If an MR fails
-    mr_failed_content = Column(BLOB)
+    mr_failed_content = Column(String(1000))
 
     # if matcher is disable, this is the default
-    mr_accepted_content = Column(BLOB)
+    mr_accepted_content = Column(String(1000))
 
     integration_id = Column(Integer, ForeignKey('Integration.id'))
     integration = relationship(Integration)
@@ -39,7 +39,7 @@ db_password = os.environ.get('EIVOR_DB_PASSWORD')
 db_url = os.environ.get('EIVOR_DB_URL')
 
 engine = create_engine(
-    'mysql+pymysql://{}:{}@{}'.format(db_username, db_password, db_url))
+    'postgres://{}:{}@{}'.format(db_username, db_password, db_url))
 Base.metadata.create_all(engine)
 Base.metadata.bind = engine
 

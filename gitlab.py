@@ -26,10 +26,10 @@ async def issue_opened(event, gl, *args, **kwargs):
 
     match = re.search(issue_expression, mr_title)
     if match is None:
-        content = preference.mr_failed_content.decode('utf-8')
+        content = preference.mr_failed_content #.decode('utf-8')
         message = prepare_mr_failed_content(content, issue_expression)
     else:
-        content = preference.mr_accepted_content.decode('utf-8')
+        content = preference.mr_accepted_content #.decode('utf-8')
         message = prepare_mr_success_content(content, match)
 
     await gl.post(url, data={"body": message})
