@@ -1,0 +1,1 @@
+web: python3 gitlab_bot/eivor.py
