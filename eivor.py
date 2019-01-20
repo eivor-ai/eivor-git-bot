@@ -1,3 +1,5 @@
+import os
+
 from aiohttp import web
 
 import constants
@@ -13,6 +15,12 @@ if __name__ == "__main__":
     # app.router.add_post("/github/{integration)id}", github.github_entry)
 
     port = constants.SERVER_PORT
+
+    port_variable = os.environ.get('PORT')
+    if port_variable is not None:
+      print('System env variable PORT is set, binding to {}'.format(port_variable))
+      port = int(port_variable)
+
     if port is not None:
         port = int(port)
 
