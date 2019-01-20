@@ -3,3 +3,4 @@ gidgetlab
 SQLAlchemy
 pymysql
 psycopg2
+cachetools
