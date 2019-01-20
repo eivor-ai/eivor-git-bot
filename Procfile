@@ -1,1 +1,1 @@
-web: python3 gitlab_bot/eivor.py
+web: python3 eivor.py
