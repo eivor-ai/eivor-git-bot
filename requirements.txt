@@ -3,4 +3,5 @@ gidgetlab
 SQLAlchemy
 pymysql
 psycopg2
+psycopg2-binary
 cachetools

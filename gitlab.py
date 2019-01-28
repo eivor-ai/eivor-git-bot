@@ -1,65 +1,20 @@
-import re
-
-from aiohttp import web, ClientSession
+from aiohttp import ClientSession, web
 from gidgetlab import aiohttp as gl_aio
-from gidgetlab import routing, sansio
+from gidgetlab import sansio
 
-from database.declaratives import Integration, db_session, Settings
+from database.declaratives import Integration, db_session
+from eivor_gitlab.routes import router
+import cryptutils
 
-gitlab_router = routing.Router()
-
-
-############# Routes
-
-@gitlab_router.register("Merge Request Hook", action="open")
-async def issue_opened(event, gl, *args, **kwargs):
-    url = f"/projects/{event.project_id}/merge_requests/{event.object_attributes['iid']}"
-
-    integration = kwargs['integration']
-    preference = db_session.query(Settings).filter(Settings.integration_id == integration.id).first()
-    if preference.mr_matcher is not None:
-        issue_expression = r'{}'.format(preference.mr_matcher)
-    else:
-        issue_expression = r'.*'
-
-    mr_title = event.object_attributes['title']
-
-    match = re.search(issue_expression, mr_title)
-    if match is None:
-        content = preference.mr_failed_content  # .decode('utf-8')
-        message = prepare_mr_failed_content(content, issue_expression)
-        await gl.put(url, data={"state_event": "close", "title": 'CLOSEED - {}'.format(mr_title)})
-    else:
-        content = preference.mr_accepted_content  # .decode('utf-8')
-        message = prepare_mr_success_content(content, match)
-
-    await gl.post('{}/notes'.format(url), data={"body": message})
-
-
-######## Utils
-
-def prepare_mr_failed_content(message, expession):
-    return '{}'.format(message).replace('{mr_matcher}', expession)
-
-
-def prepare_mr_success_content(message, match):
-    content = '{}'.format(message)
-    for i in range(0, match.lastindex):
-        str = 'match_{}'.format(i + 1)
-        content = content.replace('{' + str + '}', match.group(i + 1))
-
-    return content
-
-
-########### Entries
 
 async def gitlab_entry(request):
     # No integration id
     integration_id = request.match_info['integration_id']
     if integration_id is None:
-        return web.Response(status=402)
+        return web.Response(status=400)
 
-    integration = db_session.query(Integration).filter(Integration.id == integration_id).first()
+    integration = db_session.query(Integration).filter(
+        Integration.id == integration_id).first()
     if integration is None:
         return web.Response(status=404)
 
@@ -68,10 +23,10 @@ async def gitlab_entry(request):
 
     # Read access variables from environment
     # GL_SECRET
-    secret = integration.secret
+    secret = cryptutils.decodestr(integration.secret)
 
     # GL_ACCESS_TOKEN
-    access_token = integration.oauth_token
+    access_token = cryptutils.decodestr(integration.oauth_token)
 
     event = sansio.Event.from_http(request.headers, body, secret=secret)
 
@@ -80,7 +35,10 @@ async def gitlab_entry(request):
     if url is None:
         url = "https://gitlab.com"
     async with ClientSession() as session:
-        gl = gl_aio.GitLabAPI(
-            session, integration.bot_username, access_token=access_token, url=url)
-        await gitlab_router.dispatch(event, gl, integration=integration)
+        gl = gl_aio.GitLabAPI(session,
+                              integration.bot_username,
+                              access_token=access_token,
+                              url=url)
+
+        await router.dispatch(event, gl, integration=integration)
     return web.Response(status=200)

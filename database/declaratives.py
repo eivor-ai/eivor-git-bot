@@ -30,6 +30,9 @@ class Settings(Base):
     # if matcher is disable, this is the default
     mr_accepted_content = Column(String(1000))
 
+    # Default MR assignee
+    mr_default_assignee = Column(String(250))
+
     integration_id = Column(Integer, ForeignKey('integration.id'))
     integration = relationship(Integration)
 
