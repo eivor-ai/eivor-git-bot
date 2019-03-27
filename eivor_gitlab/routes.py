@@ -62,6 +62,20 @@ async def merge_request_updated(event, gl, *args, **kwargs):
             await gl.post(f'{url}/notes', data={'body': message})
 
 
+@router.register("Merge Request Hook", action="merge")
+async def merge_request_approved(event, gl, *args, **kwargs):
+    url = get_mr_base_url(event)
+
+    integration = kwargs["integration"]
+    preference = db_session.query(Settings).filter(
+        Settings.integration_id == integration.id).first()
+
+    default_assignee = preference.mr_default_assignee
+    if default_assignee:
+        message = f"MR Approved.\n\n --- \n\n /cc @{default_assignee}"
+        await gl.post(f"{url}/notes", data={"body": message})
+
+
 # Utils
 
 def get_mr_base_url(event):
